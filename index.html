@@ -50,8 +50,11 @@
       width: 220px;
       height: 200px;
       position: relative;
+      /* Изначальная тряска разбитого сердца */
       animation: brokenShake 0.8s infinite alternate ease-in-out;
     }
+
+    /* Общие стили половинок */
     .heart::before,
     .heart::after {
       content: "";
@@ -61,20 +64,48 @@
       background: #ff6b9d;
       top: 0;
       border-radius: 110px 110px 0 0;
-      box-shadow: 0 0 40px rgba(255, 107, 157, 0.8);
+      box-shadow: 0 0 30px rgba(255, 107, 157, 0.4);
+      transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Плавная сборка */
     }
-    .heart::before { left: 110px; transform: rotate(-45deg); transform-origin: 0 100%; }
-    .heart::after  { left: 0;    transform: rotate(45deg);  transform-origin: 100% 100%; }
 
-    /* Большая трещина разбитого сердца */
+    /* Левая половинка: изначально сдвинута влево и повернута */
+    .heart::after { 
+      left: 0; 
+      transform: rotate(35deg) translate(-40px, -20px); 
+      transform-origin: 100% 100%; 
+    }
+
+    /* Правая половинка: изначально сдвинута вправо и повернута */
+    .heart::before { 
+      left: 110px; 
+      transform: rotate(-35deg) translate(40px, -20px); 
+      transform-origin: 0 100%; 
+    }
+
+    /* Классы для состояний сборки (управляются через JS) */
+    .step-1::after { transform: rotate(40deg) translate(-25px, -10px); }
+    .step-1::before { transform: rotate(-40deg) translate(25px, -10px); }
+
+    .step-2::after { transform: rotate(45deg) translate(-15px, -5px); }
+    .step-2::before { transform: rotate(-45deg) translate(15px, -5px); }
+
+    .step-3::after { transform: rotate(45deg) translate(-5px, 0); }
+    .step-3::before { transform: rotate(-45deg) translate(5px, 0); }
+
+    /* Финальное собранное состояние */
+    .step-4::after { transform: rotate(45deg) translate(0, 0); }
+    .step-4::before { transform: rotate(-45deg) translate(0, 0); }
+
     .crack {
       position: absolute;
-      inset: 0;
-      background: linear-gradient(transparent, rgba(255,255,255,0.95) 50%, transparent);
-      transform: rotate(36deg);
-      opacity: 0.95;
-      z-index: 3;
-      transition: opacity 3.2s ease-out;
+      left: 50%;
+      top: 10%;
+      width: 4px;
+      height: 80%;
+      background: rgba(42, 27, 61, 0.6);
+      transform: translateX(-50%) rotate(5deg);
+      z-index: 5;
+      transition: opacity 0.5s;
     }
 
     .glow {
@@ -83,32 +114,34 @@
       background: radial-gradient(circle, #ffccdd 15%, #ff8ab3 45%, transparent 80%);
       border-radius: 50%;
       opacity: 0;
-      z-index: 1;
-      transition: all 4s ease;
+      z-index: -1;
+      transition: all 2s ease;
     }
 
     .progress-text {
-      font-size: 1.4em;
+      font-size: 1.2em;
       color: #ffe6cc;
       margin-top: 10px;
-      min-height: 60px;
+      min-height: 30px;
       text-align: center;
+      opacity: 0.8;
     }
 
     .message {
-      font-size: 2.35em;
+      font-size: 1.8em;
       font-weight: 300;
       text-align: center;
       line-height: 1.35;
       max-width: 90%;
       opacity: 0;
-      transition: opacity 3s ease;
-      text-shadow: 0 0 28px rgba(255, 107, 157, 0.9);
+      transition: opacity 0.8s ease;
+      text-shadow: 0 0 20px rgba(255, 107, 157, 0.6);
+      margin-top: 20px;
     }
 
     @keyframes brokenShake {
-      0% { transform: scale(1) rotate(-4deg); }
-      100% { transform: scale(1) rotate(4deg); }
+      0% { transform: scale(1) rotate(-2deg); }
+      100% { transform: scale(1) rotate(2deg); }
     }
   </style>
 </head>
@@ -123,7 +156,7 @@
     </div>
   </div>
 
-  <div class="progress-text" id="progress">Тапай по сердцу, чтобы собрать его...</div>
+  <div class="progress-text" id="progress">Тапни, чтобы начать всё исправлять...</div>
   <div class="message" id="message"></div>
 
   <script>
@@ -137,40 +170,45 @@
     let step = 0;
 
     const steps = [
-      { progress: "Шаг 1 из 4", text: "Солнышко, я был 😔" },
-      { progress: "Шаг 2 из 4", text: "неправ в том, что нагрубил тебе 😞" },
-      { progress: "Шаг 3 из 4", text: "И я виноват перед тобой 😔" },
-      { progress: "❤️ Сердце собрано", text: "Прости меня пожалуйста, малыш ❤️" }
+      { progress: "Шаг 1 из 4", text: "Солнышко, я был очень 😔" },
+      { progress: "Шаг 2 из 4", text: "неправ, когда нагрубил тебе 😞" },
+      { progress: "Шаг 3 из 4", text: "Я действительно виноват 😔" },
+      { progress: "❤️ Сердце целое", text: "Прости меня, пожалуйста, малыш ❤️" }
     ];
 
     function nextStep() {
       if (step >= 4) return;
       step++;
+      
       const current = steps[step-1];
+
+      // Добавляем класс шага для анимации половинок
+      heart.classList.remove('step-1', 'step-2', 'step-3', 'step-4');
+      heart.classList.add(`step-${step}`);
 
       progress.textContent = current.progress;
       messageEl.innerHTML = current.text;
       messageEl.style.opacity = '1';
 
-      // Уменьшаем трещину постепенно
-      crack.style.opacity = 0.95 - (step * 0.3);
-
       if (step === 4) {
-        heart.style.animation = 'none'; // убираем тряску
+        heart.style.animation = 'none'; 
         crack.style.opacity = '0';
-        glow.style.opacity = '0.98';
-        glow.style.transform = 'scale(2.4)';
+        glow.style.opacity = '0.8';
+        glow.style.transform = 'scale(1.8)';
 
-        // Вау-взрыв сердечек
+        // Праздничный взрыв сердечек
         const bg = document.getElementById('hearts');
-        for (let i = 0; i < 60; i++) {
-          const h = document.createElement('div');
-          h.className = 'heart-bg';
-          h.textContent = ['💗','💖','❤️','✨'][Math.floor(Math.random()*4)];
-          h.style.left = Math.random() * 100 + '%';
-          h.style.animationDuration = (3 + Math.random() * 6) + 's';
-          bg.appendChild(h);
-          setTimeout(() => h.remove(), 9000);
+        for (let i = 0; i < 50; i++) {
+          setTimeout(() => {
+            const h = document.createElement('div');
+            h.className = 'heart-bg';
+            h.textContent = ['💗','💖','❤️','✨'][Math.floor(Math.random()*4)];
+            h.style.left = Math.random() * 100 + '%';
+            h.style.fontSize = (Math.random() * 20 + 20) + 'px';
+            h.style.animationDuration = (3 + Math.random() * 5) + 's';
+            bg.appendChild(h);
+            setTimeout(() => h.remove(), 5000);
+          }, i * 50);
         }
       }
     }
@@ -181,15 +219,15 @@
       nextStep();
     }, { passive: false });
 
-    // Начальные парящие сердечки
+    // Фон
     const bgContainer = document.getElementById('hearts');
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 15; i++) {
       const h = document.createElement('div');
       h.className = 'heart-bg';
       h.textContent = '💗';
       h.style.left = Math.random() * 100 + '%';
-      h.style.animationDuration = (14 + Math.random() * 20) + 's';
-      h.style.animationDelay = '-' + (Math.random() * 28) + 's';
+      h.style.animationDuration = (10 + Math.random() * 15) + 's';
+      h.style.animationDelay = '-' + (Math.random() * 20) + 's';
       bgContainer.appendChild(h);
     }
   </script>
